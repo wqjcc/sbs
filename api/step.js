@@ -23,15 +23,15 @@ async function getAccessToken(username, password) {
     const encryptBody = aesEncrypt(loginBody);
     try {
         await axios.post(
-            "https://api‑mifit‑cn.huami.com/v1/user/login",
+            "https://api-mifit-cn.huami.com/v1/user/login",
             { data: encryptBody },
-            { headers: { "Content‑Type": "application/json" }, maxRedirects:0 }
+            { headers: { "Content-Type": "application/json" }, maxRedirects: 0 }
         );
-    } catch(e) {
-        if(e.response && e.response.status ===303){
+    } catch (e) {
+        if (e.response && e.response.status === 303) {
             const loc = e.response.headers.location;
             const m = loc.match(/access_token=([^&]+)/);
-            return m ? m[1]:null;
+            return m ? m[1] : null;
         }
         throw e;
     }
@@ -39,14 +39,14 @@ async function getAccessToken(username, password) {
 }
 
 async function grantLoginTokens(accessToken) {
-    const res = await axios.get(`https://api‑mifit‑cn.huami.com/v1/user/grant?access_token=${accessToken}`);
+    const res = await axios.get(`https://api-mifit-cn.huami.com/v1/user/grant?access_token=${accessToken}`);
     return res.data;
 }
 
 async function getDeviceId(appToken) {
-    const res = await axios.get("https://api‑mifit‑cn.huami.com/v1/user/devices",{headers:{"app_token":appToken}});
+    const res = await axios.get("https://api-mifit-cn.huami.com/v1/user/devices", { headers: { "app_token": appToken } });
     const dev = res.data.data[0];
-    if(!dev) throw new Error("没有找到绑定设备");
+    if (!dev) throw new Error("没有找到绑定设备");
     return dev.device_id;
 }
 
@@ -65,30 +65,31 @@ async function postStep(appToken, deviceId, stepCount) {
             "device_id": deviceId
         }
     };
-    const res = await axios.post("https://api‑mifit‑cn.huami.com/v1/data/band_data.json",
-        {data_json:JSON.stringify(dataJson)},{headers:{"app_token":appToken}});
+    const res = await axios.post(
+        "https://api-mifit-cn.huami.com/v1/data/band_data.json",
+        { data_json: JSON.stringify(dataJson) },
+        { headers: { "app_token": appToken } }
+    );
     return res.data;
 }
 
-// Vercel handler
 module.exports = async function handler(req, res) {
-    // 处理OPTIONS预检
-    if(req.method === "OPTIONS") return res.status(200).end();
-    if(req.method !== "POST") return res.status(405).json({success:false,error:"仅支持POST"});
+    if (req.method === "OPTIONS") return res.status(200).end();
+    if (req.method !== "POST") return res.status(405).json({ success: false, error: "仅支持POST请求" });
 
-    const {USERNAME,PASSWORD,TARGET_STEP} = req.body;
-    if(!USERNAME||!PASSWORD||!TARGET_STEP){
-        return res.json({success:false,error:"缺少参数 USERNAME / PASSWORD / TARGET_STEP"});
+    const { USERNAME, PASSWORD, TARGET_STEP } = req.body;
+    if (!USERNAME || !PASSWORD || !TARGET_STEP) {
+        return res.json({ success: false, error: "缺少参数 USERNAME / PASSWORD / TARGET_STEP" });
     }
-    try{
-        const accessToken = await getAccessToken(USERNAME,PASSWORD);
-        if(!accessToken) throw new Error("获取access_token失败");
+    try {
+        const accessToken = await getAccessToken(USERNAME, PASSWORD);
+        if (!accessToken) throw new Error("获取access_token失败");
         const tokenData = await grantLoginTokens(accessToken);
         const appToken = tokenData.app_token;
         const devId = await getDeviceId(appToken);
-        const result = await postStep(appToken,devId,Number(TARGET_STEP));
-        return res.json({success:true,deviceId:devId,targetStep:TARGET_STEP,result});
-    }catch(err){
-        return res.json({success:false,error:err.message||String(err)});
+        const result = await postStep(appToken, devId, Number(TARGET_STEP));
+        return res.json({ success: true, deviceId: devId, targetStep: TARGET_STEP, result });
+    } catch (err) {
+        return res.json({ success: false, error: err.message || String(err) });
     }
 };
