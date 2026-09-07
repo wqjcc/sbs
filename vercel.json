@@ -1,11 +1,4 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "api/*.js",
-      "use": "@vercel/node"
-    }
-  ],
   "headers": [
     {
       "source": "/api/(.*)",
@@ -14,6 +7,12 @@
         { "key": "Access-Control-Allow-Methods", "value": "OPTIONS,POST" },
         { "key": "Access-Control-Allow-Headers", "value": "Content-Type" }
       ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/$1"
     }
   ]
 }
