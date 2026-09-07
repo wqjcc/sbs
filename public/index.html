@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="zh‑CN">
+<head>
+    <meta charset="UTF‑8">
+    <title>步数提交</title>
+    <style>
+        *{box‑sizing:border‑box;font‑family:system‑ui}
+        body{max‑width:420px;margin:40px auto;padding:0 20px}
+        .item{margin‑bottom:16px}
+        label{display:block;margin‑bottom:6px;font‑weight:500}
+        input{width:100%;padding:10px;font‑size:16px;border:1px solid #ccc;border‑radius:6px}
+        button{width:100%;padding:12px;background:#2563eb;color:#fff;border:none;border‑radius:6px;font‑size:16px;cursor:pointer}
+        button:disabled{background:#94a3b8;cursor:not‑allowed}
+        #result{margin‑top:20px;padding:12px;border‑radius:6px;background:#f1f5f9;white‑space:pre‑wrap;font‑size:14px}
+    </style>
+</head>
+<body>
+    <h2>步数提交</h2>
+    <div class="item">
+        <label>Zepp Life账号</label>
+        <input type="text" id="username" placeholder="账号">
+    </div>
+    <div class="item">
+        <label>密码</label>
+        <input type="password" id="password" placeholder="密码">
+    </div>
+    <div class="item">
+        <label>目标步数</label>
+        <input type="number" id="step" placeholder="例如 8888">
+    </div>
+    <button id="submitBtn">执行提交</button>
+    <div id="result"></div>
+
+    <script>
+        const btn = document.getElementById('submitBtn');
+        const resBox = document.getElementById('result');
+        const API_PATH = "/api/step";
+
+        btn.addEventListener('click',async ()=>{
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value.trim();
+            const step = Number(document.getElementById('step').value.trim());
+            if(!username||!password||isNaN(step)||step<=0){
+                resBox.textContent = "请填写完整有效信息";
+                return;
+            }
+            btn.disabled = true;
+            resBox.textContent = "正在请求...";
+            try{
+                const resp = await fetch(API_PATH,{
+                    method:"POST",
+                    headers:{"Content‑Type":"application/json"},
+                    body:JSON.stringify({USERNAME:username,PASSWORD:password,TARGET_STEP:step})
+                });
+                const data = await resp.json();
+                resBox.textContent = JSON.stringify(data,null,2);
+            }catch(err){
+                resBox.textContent = "请求异常："+err.message;
+            }finally{
+                btn.disabled = false;
+            }
+        })
+    </script>
+</body>
+</html>
