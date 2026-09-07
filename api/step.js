@@ -1,3 +1,32 @@
+module.exports = async function handler(req, res) {
+  // 手动设置跨域头，放在最顶部
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'OPTIONS,POST');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  // 处理OPTIONS预检
+  if (req.method === "OPTIONS") {
+    return res.status(200).end();
+  }
+
+  if (req.method !== "POST") {
+    return res.status(405).json({ success: false, error: "只允许POST请求" });
+  }
+
+  const { USERNAME, PASSWORD, TARGET_STEP } = req.body;
+  if (!USERNAME || !PASSWORD || !TARGET_STEP) {
+    return res.json({ success: false, error: "缺少参数 USERNAME / PASSWORD / TARGET_STEP" });
+  }
+  try {
+    const accessToken = await getAccessToken(USERNAME, PASSWORD);
+    const deviceId = await getDeviceId(accessToken);
+    const result = await uploadStep(accessToken, deviceId, Number(TARGET_STEP));
+    return res.json({ success: true, data: result });
+  } catch (err) {
+    return res.json({ success: false, error: err.message || String(err) });
+  }
+};
+
 const axios = require('axios');
 const CryptoJS = require('crypto-js');
 
@@ -72,24 +101,3 @@ async function postStep(appToken, deviceId, stepCount) {
     );
     return res.data;
 }
-
-module.exports = async function handler(req, res) {
-    if (req.method === "OPTIONS") return res.status(200).end();
-    if (req.method !== "POST") return res.status(405).json({ success: false, error: "仅支持POST请求" });
-
-    const { USERNAME, PASSWORD, TARGET_STEP } = req.body;
-    if (!USERNAME || !PASSWORD || !TARGET_STEP) {
-        return res.json({ success: false, error: "缺少参数 USERNAME / PASSWORD / TARGET_STEP" });
-    }
-    try {
-        const accessToken = await getAccessToken(USERNAME, PASSWORD);
-        if (!accessToken) throw new Error("获取access_token失败");
-        const tokenData = await grantLoginTokens(accessToken);
-        const appToken = tokenData.app_token;
-        const devId = await getDeviceId(appToken);
-        const result = await postStep(appToken, devId, Number(TARGET_STEP));
-        return res.json({ success: true, deviceId: devId, targetStep: TARGET_STEP, result });
-    } catch (err) {
-        return res.json({ success: false, error: err.message || String(err) });
-    }
-};
