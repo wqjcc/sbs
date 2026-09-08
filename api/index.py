@@ -1,3 +1,4 @@
+# VERCEL_MAX_DURATION=30
 import sys
 import json
 sys.path.append("./")
