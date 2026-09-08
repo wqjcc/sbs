@@ -2,105 +2,36 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>步数提交工具</title>
-    <style>
-        * {
-            box-sizing: border-box;
-            font-family: system-ui, -apple-system, sans-serif;
-        }
-        body {
-            max-width: 420px;
-            margin: 40px auto;
-            padding: 0 20px;
-        }
-        .item {
-            margin-bottom: 16px;
-        }
-        label {
-            display: block;
-            margin-bottom: 6px;
-            font-weight: 500;
-        }
-        input {
-            width: 100%;
-            padding: 10px;
-            font-size: 16px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-        }
-        button {
-            width: 100%;
-            padding: 12px;
-            background: #2563eb;
-            color: #fff;
-            border: none;
-            border-radius: 6px;
-            font-size: 16px;
-            cursor: pointer;
-        }
-        button:disabled {
-            background: #94a3b8;
-            cursor: not-allowed;
-        }
-        #result {
-            margin-top: 20px;
-            padding: 12px;
-            border-radius: 6px;
-            background: #f1f5f9;
-            white-space: pre-wrap;
-            font-size: 14px;
-            min-height: 80px;
-        }
-    </style>
+    <title>修改步数</title>
 </head>
 <body>
-    <h2>步数提交</h2>
-    <div class="item">
-        <label>Zepp Life账号</label>
-        <input type="text" id="username" placeholder="输入账号">
+    <div>
+        <input type="text" id="username" placeholder="账号(邮箱/手机号)">
+        <input type="password" id="password" placeholder="密码">
+        <input type="number" id="step" placeholder="目标步数">
+        <button id="run">执行</button>
+        <pre id="output"></pre>
     </div>
-    <div class="item">
-        <label>密码</label>
-        <input type="password" id="password" placeholder="输入密码">
-    </div>
-    <div class="item">
-        <label>目标步数</label>
-        <input type="number" id="step" placeholder="例如 8888">
-    </div>
-    <button id="submitBtn">执行提交</button>
-    <div id="result"></div>
-
-    <script>
-        const btn = document.getElementById('submitBtn');
-        const resBox = document.getElementById('result');
-        const API_PATH = "/api/step";
-
-        btn.addEventListener('click', async () => {
-            const username = document.getElementById('username').value.trim();
-            const password = document.getElementById('password').value.trim();
-            const step = Number(document.getElementById('step').value.trim());
-
-            if (!username || !password || isNaN(step) || step <= 0) {
-                resBox.textContent = "请填写完整有效信息";
-                return;
-            }
-            btn.disabled = true;
-            resBox.textContent = "正在请求...";
-            try {
-                const resp = await fetch(API_PATH, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ USERNAME: username, PASSWORD: password, TARGET_STEP: step })
-                });
-                const data = await resp.json();
-                resBox.textContent = JSON.stringify(data, null, 2);
-            } catch (err) {
-                resBox.textContent = "请求异常：" + err.message;
-            } finally {
-                btn.disabled = false;
-            }
+<script>
+document.getElementById('run').onclick = async ()=>{
+    const payload = {
+        USERNAME: document.getElementById('username').value,
+        PASSWORD: document.getElementById('password').value,
+        TARGET_STEP: Number(document.getElementById('step').value)
+    }
+    document.getElementById('output').innerText = "正在请求...";
+    try{
+        const res = await fetch("/api/step",{
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body: JSON.stringify(payload)
         })
-    </script>
+        const data = await res.json();
+        document.getElementById('output').innerText = JSON.stringify(data,null,2);
+    }catch(err){
+        document.getElementById('output').innerText = err.toString();
+    }
+}
+</script>
 </body>
 </html>
