@@ -1,54 +1,76 @@
-from flask import Flask, request, jsonify
 import sys
+import json
 sys.path.append("./")
 from util.zepp_helper import ZeppHelper
 
-app = Flask(__name__)
-
-@app.before_request
-def cors_handler():
-    # 跨域处理
-    if request.method == "OPTIONS":
-        headers = {
-            "Access‑Control‑Allow‑Origin": "*",
-            "Access‑Control‑Allow‑Methods": "OPTIONS,POST",
-            "Access‑Control‑Allow‑Headers": "Content‑Type"
-        }
-        return ("",200,headers)
-
-@app.route("/api/step", methods=["POST"])
-def set_step():
-    resp_headers = {
-        "Access‑Control‑Allow‑Origin":"*"
+def handler(event, context):
+    headers = {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "OPTIONS,POST",
+        "Access-Control-Allow-Headers": "Content-Type",
+        "Content-Type": "application/json; charset=utf-8"
     }
-    payload = request.get_json()
+
+    http_method = event.get("httpMethod")
+
+    if http_method == "OPTIONS":
+        return {
+            "statusCode": 200,
+            "headers": headers,
+            "body": json.dumps({})
+        }
+
+    if http_method != "POST":
+        return {
+            "statusCode": 405,
+            "headers": headers,
+            "body": json.dumps({"success": False, "error": "仅支持POST请求"})
+        }
+
+    try:
+        body_raw = event.get("body", "{}")
+        payload = json.loads(body_raw)
+    except Exception as err:
+        return {
+            "statusCode": 200,
+            "headers": headers,
+            "body": json.dumps({"success": False, "error": f"JSON解析失败:{str(err)}"})
+        }
+
     username = payload.get("USERNAME")
     password = payload.get("PASSWORD")
     target_step = payload.get("TARGET_STEP")
 
-    if not (username and password and target_step):
-        return jsonify({"success":False,"error":"参数缺失 USERNAME,PASSWORD,TARGET_STEP"}),200,resp_headers
+    if not username or not password or target_step is None:
+        return {
+            "statusCode": 200,
+            "headers": headers,
+            "body": json.dumps({"success": False, "error": "缺少参数 USERNAME / PASSWORD / TARGET_STEP"})
+        }
 
     try:
         helper = ZeppHelper(username, password)
-        # 登录
         helper.login()
-        # 获取设备
-        device = helper.get_device()
-        device_id = device["deviceId"]
-        # 直接使用传入固定步数，关闭随机步数
-        result = helper.modify_step(device_id, int(target_step))
-        return jsonify({
-            "success":True,
-            "deviceId":device_id,
-            "result":result
-        }),200,resp_headers
+        device_info = helper.get_device()
+        dev_id = device_info["deviceId"]
+        ret = helper.modify_step(dev_id, int(target_step))
+        resp_data = {
+            "success": True,
+            "deviceId": dev_id,
+            "result": ret
+        }
+        return {
+            "statusCode": 200,
+            "headers": headers,
+            "body": json.dumps(resp_data, ensure_ascii=False)
+        }
     except Exception as e:
-        return jsonify({
-            "success":False,
-            "error":str(e)
-        }),200,resp_headers
-
-# vercel python serverless需要暴露app
-if __name__ == "__main__":
-    app.run()
+        resp_data = {
+            "success": False,
+            "error": str(e)
+        }
+        return {
+            "statusCode": 200,
+            "headers": headers,
+            "body": json.dumps(resp_data, ensure_ascii=False)
+        }
