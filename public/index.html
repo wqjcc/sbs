@@ -31,7 +31,7 @@ runBtn.onclick = async ()=>{
 
     output.innerText = "正在请求...";
     try{
-        const res = await fetch("/api/index",{
+        const res = await fetch("/api/step",{
             method:"POST",
             headers:{"Content-Type":"application/json"},
             body: JSON.stringify({USERNAME,PASSWORD,TARGET_STEP})
