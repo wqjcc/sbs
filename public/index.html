@@ -2,34 +2,44 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>修改步数</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>步数修改</title>
+    <style>
+        body{font-family:system-ui;padding:20px;max-width:500px;margin:0 auto;}
+        div{display:flex;gap:8px;flex-direction:column;}
+        input{padding:10px;font-size:16px;}
+        button{padding:12px;background:#2563eb;color:white;border:none;border-radius:6px;font-size:16px;cursor:pointer;}
+        pre{margin-top:16px;padding:12px;background:#f3f4f6;white-space:pre-wrap;min-height:120px;}
+    </style>
 </head>
 <body>
     <div>
         <input type="text" id="username" placeholder="账号(邮箱/手机号)">
         <input type="password" id="password" placeholder="密码">
-        <input type="number" id="step" placeholder="目标步数">
-        <button id="run">执行</button>
-        <pre id="output"></pre>
+        <input type="number" id="step" placeholder="目标步数，例如：8888">
+        <button id="runBtn">执行提交步数</button>
+        <pre id="output">等待操作...</pre>
     </div>
 <script>
-document.getElementById('run').onclick = async ()=>{
-    const payload = {
-        USERNAME: document.getElementById('username').value,
-        PASSWORD: document.getElementById('password').value,
-        TARGET_STEP: Number(document.getElementById('step').value)
-    }
-    document.getElementById('output').innerText = "正在请求...";
+const runBtn = document.getElementById('runBtn');
+const output = document.getElementById('output');
+
+runBtn.onclick = async ()=>{
+    const USERNAME = document.getElementById('username').value.trim();
+    const PASSWORD = document.getElementById('password').value.trim();
+    const TARGET_STEP = Number(document.getElementById('step').value);
+
+    output.innerText = "正在请求...";
     try{
-        const res = await fetch("/api/step",{
+        const res = await fetch("/api/index",{
             method:"POST",
             headers:{"Content-Type":"application/json"},
-            body: JSON.stringify(payload)
-        })
+            body: JSON.stringify({USERNAME,PASSWORD,TARGET_STEP})
+        });
         const data = await res.json();
-        document.getElementById('output').innerText = JSON.stringify(data,null,2);
+        output.innerText = JSON.stringify(data,null,2);
     }catch(err){
-        document.getElementById('output').innerText = err.toString();
+        output.innerText = "异常："+err.toString();
     }
 }
 </script>
